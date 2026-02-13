@@ -1,4 +1,26 @@
-export default function TodoItem({ id, text, done, priority = 'Medium', dueDate = '', onToggle, onRemove, onUpdate }) {
+import { useState, useEffect, useRef, useCallback } from 'react';
+import TodoForm from './TodoForm';
+
+export default function TodoItem({ 
+  id, 
+  text, 
+  done, 
+  priority = 'Medium', 
+  dueDate = '', 
+  isEditing = false,
+  onToggle, 
+  onRemove, 
+  onUpdate,
+  onEditStart,
+  onEditEnd
+}) {
+  const [isEditMode, setIsEditMode] = useState(isEditing);
+  const itemRef = useRef(null);
+
+  useEffect(() => {
+    setIsEditMode(isEditing);
+  }, [isEditing]);
+
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High':
@@ -27,14 +49,79 @@ export default function TodoItem({ id, text, done, priority = 'Medium', dueDate 
     return due < today && !done;
   };
 
+  const handleEditSubmit = useCallback((updates) => {
+    onUpdate(id, updates);
+    setIsEditMode(false);
+    if (onEditEnd) {
+      onEditEnd();
+    }
+  }, [id, onUpdate, onEditEnd]);
+
+  const handleEditCancel = useCallback(() => {
+    setIsEditMode(false);
+    if (onEditEnd) {
+      onEditEnd();
+    }
+  }, [onEditEnd]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isEditMode) {
+        handleEditCancel();
+      }
+    };
+
+    const handleClickOutside = (e) => {
+      if (isEditMode && itemRef.current && !itemRef.current.contains(e.target)) {
+        handleEditCancel();
+      }
+    };
+
+    if (isEditMode) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+    return undefined;
+  }, [isEditMode, handleEditCancel]);
+
+  if (isEditMode) {
+    return (
+      <div ref={itemRef} className="p-3 border rounded-lg shadow-sm bg-white">
+        <TodoForm
+          initialText={text}
+          initialPriority={priority}
+          initialDueDate={dueDate}
+          onSubmit={handleEditSubmit}
+          onCancel={handleEditCancel}
+          isEditMode={true}
+        />
+      </div>
+    );
+  }
+
+  // Display mode
   return (
-    <div className={`flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md transition-shadow ${
-      isOverdue() ? 'bg-red-50 border-red-200' : 'bg-white'
-    }`}>
+    <div 
+      ref={itemRef}
+      className={`flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer group ${
+        isOverdue() ? 'bg-red-50 border-red-200' : 'bg-white'
+      }`}
+      onClick={() => {
+        setIsEditMode(true);
+        if (onEditStart) {
+          onEditStart();
+        }
+      }}
+    >
       <input
         type="checkbox"
         checked={done}
         onChange={() => onToggle(id)}
+        onClick={(e) => e.stopPropagation()}
         className="w-5 h-5 cursor-pointer"
       />
       <div className="flex-1 min-w-0">
@@ -59,8 +146,11 @@ export default function TodoItem({ id, text, done, priority = 'Medium', dueDate 
         </div>
       </div>
       <button
-        onClick={() => onRemove(id)}
-        className="text-red-500 hover:text-red-700 font-semibold transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(id);
+        }}
+        className="text-red-500 hover:text-red-700 font-semibold transition-colors opacity-0 group-hover:opacity-100"
       >
         Delete
       </button>

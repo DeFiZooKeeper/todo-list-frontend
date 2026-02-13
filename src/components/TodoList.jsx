@@ -1,6 +1,14 @@
 import TodoItem from './TodoItem';
 
-export default function TodoList({ todos, onToggle, onRemove, onUpdate }) {
+export default function TodoList({ 
+  todos, 
+  onToggle, 
+  onRemove, 
+  onUpdate,
+  editingId,
+  onEditStart,
+  onEditEnd
+}) {
   if (todos.length === 0) {
     return (
       <div className="text-center text-gray-500 py-8">
@@ -20,9 +28,12 @@ export default function TodoList({ todos, onToggle, onRemove, onUpdate }) {
           done={todo.done}
           priority={todo.priority}
           dueDate={todo.dueDate}
+          isEditing={editingId === todo.id}
           onToggle={onToggle}
           onRemove={onRemove}
           onUpdate={onUpdate}
+          onEditStart={() => onEditStart && onEditStart(todo.id)}
+          onEditEnd={() => onEditEnd && onEditEnd()}
         />
       ))}
     </div>
