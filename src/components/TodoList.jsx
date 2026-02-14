@@ -28,6 +28,8 @@ export default function TodoList({
           done={todo.done}
           priority={todo.priority}
           dueDate={todo.dueDate}
+          recurrence={todo.recurrence}
+          isRecurringTemplate={todo.isRecurringTemplate}
           isEditing={editingId === todo.id}
           onToggle={onToggle}
           onRemove={onRemove}

@@ -4,6 +4,7 @@ export default function TodoForm({
   initialText = '', 
   initialPriority = 'Medium', 
   initialDueDate = '', 
+  initialRecurrence = null,
   onSubmit, 
   onCancel,
   isEditMode = false 
@@ -12,14 +13,17 @@ export default function TodoForm({
   const [text, setText] = useState(isEditMode ? initialText : '');
   const [priority, setPriority] = useState(isEditMode ? initialPriority : 'Medium');
   const [dueDate, setDueDate] = useState(isEditMode ? initialDueDate : '');
+  const [recurrence, setRecurrence] = useState(isEditMode && initialRecurrence ? initialRecurrence : 'None');
 
   const handleSubmit = () => {
     if (text.trim()) {
-      onSubmit({ text, priority, dueDate });
+      const recurrenceData = recurrence !== 'None' ? recurrence : null;
+      onSubmit({ text, priority, dueDate, recurrence: recurrenceData });
       if (!isEditMode) {
         setText('');
         setPriority('Medium');
         setDueDate('');
+        setRecurrence('None');
       }
     }
   };
@@ -34,6 +38,7 @@ export default function TodoForm({
     setText(initialText);
     setPriority(initialPriority);
     setDueDate(initialDueDate);
+    setRecurrence(isEditMode && initialRecurrence ? initialRecurrence : 'None');
     if (onCancel) {
       onCancel();
     }
@@ -66,6 +71,19 @@ export default function TodoForm({
             onChange={(e) => setDueDate(e.target.value)}
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
+        </div>
+        <div>
+          <select
+            value={recurrence}
+            onChange={(e) => setRecurrence(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="None">No Repeat</option>
+            <option value="Daily">Daily</option>
+            <option value="Weekly">Weekly</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Yearly">Yearly</option>
+          </select>
         </div>
         <div className="flex gap-2">
           <button
@@ -104,7 +122,7 @@ export default function TodoForm({
           Add
         </button>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 mb-2">
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
@@ -120,6 +138,19 @@ export default function TodoForm({
           onChange={(e) => setDueDate(e.target.value)}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         />
+      </div>
+      <div>
+        <select
+          value={recurrence}
+          onChange={(e) => setRecurrence(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+        >
+          <option value="None">No Repeat</option>
+          <option value="Daily">Daily</option>
+          <option value="Weekly">Weekly</option>
+          <option value="Monthly">Monthly</option>
+          <option value="Yearly">Yearly</option>
+        </select>
       </div>
     </div>
   );

@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import TodoForm from './TodoForm';
 import TodoList from './TodoList';
+import { calculateNextDueDate } from '../utils/recurrence';
 
 export default function TodoApp() {
   const [todos, setTodos] = useState(() => {
     const saved = localStorage.getItem('todos');
     return saved
       ? JSON.parse(saved)
-      : [{ id: 1, text: 'Learn React', done: false, priority: 'Medium', dueDate: '' }];
+      : [{ id: 1, text: 'Learn React', done: false, priority: 'Medium', dueDate: '', recurrence: null, isRecurringTemplate: false }];
   });
 
   const [searchText, setSearchText] = useState('');
@@ -16,6 +17,7 @@ export default function TodoApp() {
   const [dateRangeStart, setDateRangeStart] = useState('');
   const [dateRangeEnd, setDateRangeEnd] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const toggleTimeoutRef = useRef(null);
 
   // Save todos to localStorage whenever they change
   useEffect(() => {
@@ -23,32 +25,86 @@ export default function TodoApp() {
   }, [todos]);
 
   const addTodo = (formData) => {
+    const isRecurringTemplate = formData.recurrence !== null;
     setTodos([...todos, { 
       id: Date.now(), 
       text: formData.text, 
       done: false, 
       priority: formData.priority, 
-      dueDate: formData.dueDate 
+      dueDate: formData.dueDate,
+      recurrence: formData.recurrence,
+      isRecurringTemplate,
+      parentId: null
     }]);
   };
 
   const toggleTodo = (id) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, done: !todo.done } : todo
-      )
-    );
+    // Debounce with 300ms delay to prevent spam-spawning
+    if (toggleTimeoutRef.current) {
+      clearTimeout(toggleTimeoutRef.current);
+    }
+
+    toggleTimeoutRef.current = setTimeout(() => {
+      setTodos((prevTodos) => {
+        const updatedTodos = prevTodos.map((todo) => {
+          if (todo.id === id) {
+            return { ...todo, done: !todo.done };
+          }
+          return todo;
+        });
+
+        // Check if the toggled todo is being marked as done and is a recurring template
+        const toggledTodo = updatedTodos.find((t) => t.id === id);
+        if (toggledTodo && toggledTodo.done && toggledTodo.isRecurringTemplate && toggledTodo.recurrence) {
+          // Calculate next due date
+          const nextDueDate = calculateNextDueDate(
+            toggledTodo.dueDate || new Date().toISOString().split('T')[0],
+            toggledTodo.recurrence
+          );
+
+          // Create new recurring todo instance
+          const newTodo = {
+            id: Date.now(),
+            text: toggledTodo.text,
+            done: false,
+            priority: toggledTodo.priority,
+            dueDate: nextDueDate,
+            recurrence: toggledTodo.recurrence,
+            isRecurringTemplate: true,
+            parentId: id
+          };
+
+          return [...updatedTodos, newTodo];
+        }
+
+        return updatedTodos;
+      });
+
+      toggleTimeoutRef.current = null;
+    }, 300);
   };
 
   const removeTodo = (id) => {
+    // Note: When deleting a recurring todo, we only delete that instance
+    // If you want to delete all future instances, the parent would need to be deleted instead
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
   const updateTodo = (id, updates) => {
     setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, ...updates } : todo
-      )
+      todos.map((todo) => {
+        if (todo.id === id) {
+          const updated = { ...todo, ...updates };
+          // Mark as recurring template if recurrence is set
+          if (updates.recurrence) {
+            updated.isRecurringTemplate = true;
+          } else if (updates.recurrence === null) {
+            updated.isRecurringTemplate = false;
+          }
+          return updated;
+        }
+        return todo;
+      })
     );
   };
 

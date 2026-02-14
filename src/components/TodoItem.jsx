@@ -7,6 +7,8 @@ export default function TodoItem({
   done, 
   priority = 'Medium', 
   dueDate = '', 
+  recurrence = null,
+  isRecurringTemplate = false,
   isEditing = false,
   onToggle, 
   onRemove, 
@@ -95,6 +97,7 @@ export default function TodoItem({
           initialText={text}
           initialPriority={priority}
           initialDueDate={dueDate}
+          initialRecurrence={recurrence}
           onSubmit={handleEditSubmit}
           onCancel={handleEditCancel}
           isEditMode={true}
@@ -125,13 +128,20 @@ export default function TodoItem({
         className="w-5 h-5 cursor-pointer"
       />
       <div className="flex-1 min-w-0">
-        <span
-          className={`block ${
-            done ? 'line-through text-gray-400' : 'text-gray-800'
-          }`}
-        >
-          {text}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`block ${
+              done ? 'line-through text-gray-400' : 'text-gray-800'
+            }`}
+          >
+            {text}
+          </span>
+          {isRecurringTemplate && (
+            <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-300 whitespace-nowrap">
+              🔄 Repeats
+            </span>
+          )}
+        </div>
         <div className="flex gap-2 mt-1 flex-wrap">
           <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getPriorityColor(priority)}`}>
             {priority}
