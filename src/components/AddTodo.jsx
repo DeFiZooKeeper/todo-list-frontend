@@ -4,13 +4,19 @@ export default function AddTodo({ onAdd }) {
   const [inputValue, setInputValue] = useState('');
   const [priority, setPriority] = useState('Medium');
   const [dueDate, setDueDate] = useState('');
+  const [tagInput, setTagInput] = useState('');
 
   const handleAdd = () => {
     if (inputValue.trim()) {
-      onAdd(inputValue, priority, dueDate);
+      const tags = tagInput
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+      onAdd(inputValue, priority, dueDate, tags);
       setInputValue('');
       setPriority('Medium');
       setDueDate('');
+      setTagInput('');
     }
   };
 
@@ -55,6 +61,13 @@ export default function AddTodo({ onAdd }) {
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         />
       </div>
+      <input
+        type="text"
+        value={tagInput}
+        onChange={(e) => setTagInput(e.target.value)}
+        placeholder="Tags (comma-separated, e.g., work, urgent, home)"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm mt-2"
+      />
     </div>
   );
 }
