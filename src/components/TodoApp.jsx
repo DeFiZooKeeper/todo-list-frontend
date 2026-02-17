@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AddTodo from './AddTodo';
 import TodoList from './TodoList';
 import SearchBar from './SearchBar';
+import { sortByUrgency } from '../utils/urgencySort';
 
 export default function TodoApp() {
   const [todos, setTodos] = useState(() => {
@@ -47,13 +48,8 @@ export default function TodoApp() {
     todo.text.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Sort todos by due date (ascending, with empty dates at the end)
-  const sortedTodos = [...filteredTodos].sort((a, b) => {
-    if (!a.dueDate && !b.dueDate) return 0;
-    if (!a.dueDate) return 1;
-    if (!b.dueDate) return -1;
-    return new Date(a.dueDate) - new Date(b.dueDate);
-  });
+  // Sort todos by urgency
+  const sortedTodos = sortByUrgency(filteredTodos);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 py-8 px-4">
