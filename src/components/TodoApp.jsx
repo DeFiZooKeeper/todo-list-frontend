@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AddTodo from './AddTodo';
 import TodoList from './TodoList';
 import SearchBar from './SearchBar';
+import TagFilter from './TagFilter';
 import { sortByUrgency } from '../utils/urgencySort';
 
 export default function TodoApp() {
@@ -9,18 +10,19 @@ export default function TodoApp() {
     const saved = localStorage.getItem('todos');
     return saved
       ? JSON.parse(saved)
-      : [{ id: 1, text: 'Learn React', done: false, priority: 'Medium', dueDate: '' }];
+      : [{ id: 1, text: 'Learn React', done: false, priority: 'Medium', dueDate: '', tags: [] }];
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
 
   // Save todos to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
 
-  const addTodo = (text, priority = 'Medium', dueDate = '') => {
-    setTodos([...todos, { id: Date.now(), text, done: false, priority, dueDate }]);
+  const addTodo = (text, priority = 'Medium', dueDate = '', tags = []) => {
+    setTodos([...todos, { id: Date.now(), text, done: false, priority, dueDate, tags }]);
   };
 
   const toggleTodo = (id) => {
@@ -43,13 +45,30 @@ export default function TodoApp() {
     );
   };
 
+  // Get all unique tags
+  const allTags = [...new Set(todos.flatMap((todo) => todo.tags || []))].sort();
+
   // Filter todos by search query (case-insensitive)
-  const filteredTodos = todos.filter((todo) =>
+  let filteredTodos = todos.filter((todo) =>
     todo.text.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Filter by selected tags (show todos matching ANY selected tag)
+  if (selectedTags.length > 0) {
+    filteredTodos = filteredTodos.filter((todo) =>
+      selectedTags.some((tag) => (todo.tags || []).includes(tag))
+    );
+  }
+
   // Sort todos by urgency
   const sortedTodos = sortByUrgency(filteredTodos);
+
+  // Handle tag click to filter
+  const handleTagClick = (tag) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 py-8 px-4">
@@ -62,11 +81,18 @@ export default function TodoApp() {
         </p>
         <AddTodo onAdd={addTodo} />
         <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <TagFilter
+          allTags={allTags}
+          selectedTags={selectedTags}
+          onTagClick={handleTagClick}
+          onClearFilters={() => setSelectedTags([])}
+        />
         <TodoList
           todos={sortedTodos}
           onToggle={toggleTodo}
           onRemove={removeTodo}
           onUpdate={updateTodo}
+          onTagClick={handleTagClick}
           hasSearch={searchQuery.length > 0}
           totalTodos={todos.length}
         />

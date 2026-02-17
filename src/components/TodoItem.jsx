@@ -1,6 +1,17 @@
 import { getUrgencyCategory } from '../utils/urgencySort';
 
-export default function TodoItem({ id, text, done, priority = 'Medium', dueDate = '', onToggle, onRemove, onUpdate }) {
+export default function TodoItem({ id, text, done, priority = 'Medium', dueDate = '', tags = [], onToggle, onRemove, onTagClick }) {
+  const tagColors = [
+    'bg-purple-100 text-purple-800',
+    'bg-indigo-100 text-indigo-800',
+    'bg-pink-100 text-pink-800',
+    'bg-cyan-100 text-cyan-800',
+    'bg-teal-100 text-teal-800',
+    'bg-lime-100 text-lime-800',
+  ];
+
+  const getTagColor = (index) => tagColors[index % tagColors.length];
+
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High':
@@ -66,6 +77,15 @@ export default function TodoItem({ id, text, done, priority = 'Medium', dueDate 
               {formatDate(dueDate)}
             </span>
           )}
+          {tags && tags.map((tag, index) => (
+            <button
+              key={tag}
+              onClick={() => onTagClick && onTagClick(tag)}
+              className={`inline-block px-2 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTagColor(index)}`}
+            >
+              {tag}
+            </button>
+          ))}
         </div>
       </div>
       <button
