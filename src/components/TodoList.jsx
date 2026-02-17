@@ -1,11 +1,20 @@
 import TodoItem from './TodoItem';
 
-export default function TodoList({ todos, onToggle, onRemove, onUpdate }) {
+export default function TodoList({ todos, onToggle, onRemove, onUpdate, hasSearch = false, totalTodos = 0 }) {
   if (todos.length === 0) {
     return (
       <div className="text-center text-gray-500 py-8">
-        <p className="text-lg">No todos yet</p>
-        <p className="text-sm">Add a todo to get started!</p>
+        {hasSearch ? (
+          <>
+            <p className="text-lg">No todos match your search</p>
+            <p className="text-sm">Try adjusting your search query</p>
+          </>
+        ) : (
+          <>
+            <p className="text-lg">No todos yet</p>
+            <p className="text-sm">Add a todo to get started!</p>
+          </>
+        )}
       </div>
     );
   }

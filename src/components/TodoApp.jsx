@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AddTodo from './AddTodo';
 import TodoList from './TodoList';
+import SearchBar from './SearchBar';
 
 export default function TodoApp() {
   const [todos, setTodos] = useState(() => {
@@ -9,6 +10,8 @@ export default function TodoApp() {
       ? JSON.parse(saved)
       : [{ id: 1, text: 'Learn React', done: false, priority: 'Medium', dueDate: '' }];
   });
+
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Save todos to localStorage whenever they change
   useEffect(() => {
@@ -39,8 +42,13 @@ export default function TodoApp() {
     );
   };
 
+  // Filter todos by search query (case-insensitive)
+  const filteredTodos = todos.filter((todo) =>
+    todo.text.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Sort todos by due date (ascending, with empty dates at the end)
-  const sortedTodos = [...todos].sort((a, b) => {
+  const sortedTodos = [...filteredTodos].sort((a, b) => {
     if (!a.dueDate && !b.dueDate) return 0;
     if (!a.dueDate) return 1;
     if (!b.dueDate) return -1;
@@ -57,11 +65,14 @@ export default function TodoApp() {
           Stay organized and track your tasks
         </p>
         <AddTodo onAdd={addTodo} />
+        <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
         <TodoList
           todos={sortedTodos}
           onToggle={toggleTodo}
           onRemove={removeTodo}
           onUpdate={updateTodo}
+          hasSearch={searchQuery.length > 0}
+          totalTodos={todos.length}
         />
       </div>
     </div>
