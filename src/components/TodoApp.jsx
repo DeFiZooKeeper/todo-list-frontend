@@ -7,7 +7,7 @@ export default function TodoApp() {
     const saved = localStorage.getItem('todos');
     return saved
       ? JSON.parse(saved)
-      : [{ id: 1, text: 'Learn React', done: false, priority: 'Medium', dueDate: '' }];
+      : [{ id: 1, text: 'Clean kitchen', done: false, priority: 'Medium', dueDate: '' }];
   });
 
   // Save todos to localStorage whenever they change
