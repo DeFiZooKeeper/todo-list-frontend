@@ -1,4 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+/**
+ * @vitest
+ * @jest
+ */
 import { getUrgencyCategory, sortByUrgency } from '../../utils/urgencySort';
 
 describe('urgencySort', () => {
