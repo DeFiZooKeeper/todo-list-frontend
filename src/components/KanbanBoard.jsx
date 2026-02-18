@@ -24,7 +24,7 @@ const COLUMNS = [
   },
 ];
 
-export default function KanbanBoard({ todos, onMove, onRemove, onTagClick }) {
+export default function KanbanBoard({ todos, onMove, onRemove, onTagClick, onUpdateTags }) {
   const getTodosForColumn = (columnKey) =>
     todos.filter((todo) => todo.status === columnKey);
 
@@ -67,6 +67,7 @@ export default function KanbanBoard({ todos, onMove, onRemove, onTagClick }) {
                     tags={todo.tags}
                     onRemove={onRemove}
                     onTagClick={onTagClick}
+                    onUpdateTags={onUpdateTags}
                     onMoveBack={
                       getPrevStatus(todo.status)
                         ? () => onMove(todo.id, getPrevStatus(todo.status))
