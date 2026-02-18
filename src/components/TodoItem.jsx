@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { getUrgencyCategory } from '../utils/urgencySort';
 
 export default function TodoItem({
@@ -12,12 +13,17 @@ export default function TodoItem({
   onToggle,
   onRemove,
   onTagClick,
+  onUpdateTags,
   onMoveBack,
   onMoveNext,
 }) {
   // Normalise: if status prop is provided use it, otherwise derive from done
   const resolvedStatus = status !== undefined ? status : (done ? 'done' : 'todo');
   const isDone = resolvedStatus === 'done';
+
+  // State for tag editing
+  const [isEditingTags, setIsEditingTags] = useState(false);
+  const [tagInput, setTagInput] = useState('');
 
   const tagColors = [
     'bg-purple-100 text-purple-800',
@@ -68,6 +74,54 @@ export default function TodoItem({
 
   const urgency = getUrgencyCategory({ dueDate, done: isDone });
 
+  // Handle removing a tag
+  const handleRemoveTag = (tagToRemove) => {
+    const updatedTags = (tags || []).filter((tag) => tag !== tagToRemove);
+    if (onUpdateTags) {
+      onUpdateTags(id, updatedTags);
+    }
+  };
+
+  // Handle adding new tags
+  const handleAddTags = () => {
+    if (!tagInput.trim()) return;
+    
+    // Parse comma-separated tags, trim whitespace, filter out empty strings
+    const newTags = tagInput
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+    
+    if (newTags.length === 0) return;
+    
+    // Combine existing tags with new tags, removing duplicates (case-insensitive)
+    const existingTags = tags || [];
+    const updatedTags = [...existingTags];
+    
+    newTags.forEach((newTag) => {
+      const isDuplicate = existingTags.some(
+        (existingTag) => existingTag.toLowerCase() === newTag.toLowerCase()
+      );
+      if (!isDuplicate) {
+        updatedTags.push(newTag);
+      }
+    });
+    
+    if (onUpdateTags) {
+      onUpdateTags(id, updatedTags);
+    }
+    
+    setTagInput('');
+  };
+
+  // Handle key press in tag input
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTags();
+    }
+  };
+
   return (
     <div className={`flex flex-col gap-2 p-3 border rounded-lg shadow-sm hover:shadow-md transition-shadow ${
       urgency === 'overdue' ? 'border-red-200' : 'border-gray-200'
@@ -99,15 +153,74 @@ export default function TodoItem({
               </span>
             )}
             {tags && tags.map((tag, index) => (
-              <button
+              <span
                 key={tag}
-                onClick={() => onTagClick && onTagClick(tag)}
-                className={`inline-block px-2 py-0.5 rounded text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTagColor(index)}`}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${getTagColor(index)}`}
               >
-                {tag}
-              </button>
+                <button
+                  onClick={() => onTagClick && onTagClick(tag)}
+                  className="hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  {tag}
+                </button>
+                {onUpdateTags && (
+                  <button
+                    onClick={() => handleRemoveTag(tag)}
+                    className="ml-0.5 text-[10px] hover:text-red-600 transition-colors cursor-pointer leading-none"
+                    aria-label={`Remove ${tag} tag`}
+                  >
+                    ×
+                  </button>
+                )}
+              </span>
             ))}
           </div>
+          
+          {/* Tag editing section */}
+          {onUpdateTags && (
+            <div className="mt-2">
+              {isEditingTags ? (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Add tags (comma-separated)"
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button
+                      onClick={handleAddTags}
+                      disabled={!tagInput.trim()}
+                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Add
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingTags(false);
+                        setTagInput('');
+                      }}
+                      className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                    >
+                      Done
+                    </button>
+                  </div>
+                  <span className="text-[10px] text-gray-500">
+                    Press Enter or click Add to add tags
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsEditingTags(true)}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                >
+                  Edit Tags
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <button
           onClick={() => onRemove(id)}

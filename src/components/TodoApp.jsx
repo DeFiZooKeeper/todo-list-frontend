@@ -44,6 +44,14 @@ export default function TodoApp() {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
+  const updateTodoTags = (id, newTags) => {
+    setTodos(
+      todos.map((todo) =>
+        todo.id === id ? { ...todo, tags: newTags } : todo
+      )
+    );
+  };
+
   // Get all unique tags
   const allTags = [...new Set(todos.flatMap((todo) => todo.tags || []))].sort();
 
@@ -129,6 +137,7 @@ export default function TodoApp() {
             onMove={moveTodo}
             onRemove={removeTodo}
             onTagClick={handleTagClick}
+            onUpdateTags={updateTodoTags}
           />
         )}
       </div>
