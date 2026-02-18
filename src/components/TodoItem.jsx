@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { getUrgencyCategory } from '../utils/urgencySort';
 
 export default function TodoItem({
@@ -11,6 +12,7 @@ export default function TodoItem({
   tags = [],
   onToggle,
   onRemove,
+  onUpdateTags,
   onTagClick,
   onMoveBack,
   onMoveNext,
@@ -18,6 +20,10 @@ export default function TodoItem({
   // Normalise: if status prop is provided use it, otherwise derive from done
   const resolvedStatus = status !== undefined ? status : (done ? 'done' : 'todo');
   const isDone = resolvedStatus === 'done';
+
+  // State for tag editing
+  const [isEditingTags, setIsEditingTags] = useState(false);
+  const [tagInput, setTagInput] = useState('');
 
   const tagColors = [
     'bg-purple-100 text-purple-800',
@@ -68,6 +74,32 @@ export default function TodoItem({
 
   const urgency = getUrgencyCategory({ dueDate, done: isDone });
 
+  const handleRemoveTag = (tagToRemove) => {
+    const newTags = (tags || []).filter((tag) => tag !== tagToRemove);
+    onUpdateTags(id, newTags);
+  };
+
+  const handleAddTags = () => {
+    if (!tagInput.trim()) return;
+    
+    const newTags = tagInput
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag && !(tags || []).includes(tag));
+    
+    if (newTags.length > 0) {
+      onUpdateTags(id, [...(tags || []), ...newTags]);
+    }
+    setTagInput('');
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTags();
+    }
+  };
+
   return (
     <div className={`flex flex-col gap-2 p-3 border rounded-lg shadow-sm hover:shadow-md transition-shadow ${
       urgency === 'overdue' ? 'border-red-200' : 'border-gray-200'
@@ -99,15 +131,67 @@ export default function TodoItem({
               </span>
             )}
             {tags && tags.map((tag, index) => (
-              <button
+              <span
                 key={tag}
-                onClick={() => onTagClick && onTagClick(tag)}
-                className={`inline-block px-2 py-0.5 rounded text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTagColor(index)}`}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${getTagColor(index)}`}
               >
-                {tag}
-              </button>
+                <button
+                  onClick={() => onTagClick && onTagClick(tag)}
+                  className="hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  {tag}
+                </button>
+                {isEditingTags && (
+                  <button
+                    onClick={() => handleRemoveTag(tag)}
+                    className="ml-0.5 text-xs hover:text-red-600 transition-colors"
+                    title="Remove tag"
+                  >
+                    ×
+                  </button>
+                )}
+              </span>
             ))}
+            {!isEditingTags && (
+              <button
+                onClick={() => setIsEditingTags(true)}
+                className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                title="Edit tags"
+              >
+                + Tags
+              </button>
+            )}
           </div>
+          
+          {/* Tag editing UI */}
+          {isEditingTags && (
+            <div className="mt-2 flex gap-2 items-center">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Add tags (comma separated)"
+                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                autoFocus
+              />
+              <button
+                onClick={handleAddTags}
+                className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditingTags(false);
+                  setTagInput('');
+                }}
+                className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          )}
         </div>
         <button
           onClick={() => onRemove(id)}
