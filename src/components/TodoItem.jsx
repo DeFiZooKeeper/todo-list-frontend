@@ -1,6 +1,24 @@
 import { getUrgencyCategory } from '../utils/urgencySort';
 
-export default function TodoItem({ id, text, done, priority = 'Medium', dueDate = '', tags = [], onToggle, onRemove, onTagClick }) {
+export default function TodoItem({
+  id,
+  text,
+  status,
+  // legacy support: if status is not provided, fall back to done
+  done,
+  priority = 'Medium',
+  dueDate = '',
+  tags = [],
+  onToggle,
+  onRemove,
+  onTagClick,
+  onMoveBack,
+  onMoveNext,
+}) {
+  // Normalise: if status prop is provided use it, otherwise derive from done
+  const resolvedStatus = status !== undefined ? status : (done ? 'done' : 'todo');
+  const isDone = resolvedStatus === 'done';
+
   const tagColors = [
     'bg-purple-100 text-purple-800',
     'bg-indigo-100 text-indigo-800',
@@ -48,52 +66,82 @@ export default function TodoItem({ id, text, done, priority = 'Medium', dueDate 
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const urgency = getUrgencyCategory({ dueDate, done });
+  const urgency = getUrgencyCategory({ dueDate, done: isDone });
 
   return (
-    <div className={`flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md transition-shadow ${
+    <div className={`flex flex-col gap-2 p-3 border rounded-lg shadow-sm hover:shadow-md transition-shadow ${
       urgency === 'overdue' ? 'border-red-200' : 'border-gray-200'
     } bg-white`}>
-      <input
-        type="checkbox"
-        checked={done}
-        onChange={() => onToggle(id)}
-        className="w-5 h-5 cursor-pointer"
-      />
-      <div className="flex-1 min-w-0">
-        <span
-          className={`block ${
-            done ? 'line-through text-gray-400' : 'text-gray-800'
-          }`}
-        >
-          {text}
-        </span>
-        <div className="flex gap-2 mt-1 flex-wrap">
-          <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getPriorityColor(priority)}`}>
-            {priority}
+      <div className="flex items-start gap-2">
+        {onToggle && (
+          <input
+            type="checkbox"
+            checked={isDone}
+            onChange={() => onToggle(id)}
+            className="w-5 h-5 cursor-pointer mt-0.5"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <span
+            className={`block text-sm ${
+              isDone ? 'line-through text-gray-400' : 'text-gray-800'
+            }`}
+          >
+            {text}
           </span>
-          {dueDate && (
-            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getUrgencyColor(urgency)}`}>
-              {formatDate(dueDate)}
+          <div className="flex gap-1 mt-1 flex-wrap">
+            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${getPriorityColor(priority)}`}>
+              {priority}
             </span>
-          )}
-          {tags && tags.map((tag, index) => (
-            <button
-              key={tag}
-              onClick={() => onTagClick && onTagClick(tag)}
-              className={`inline-block px-2 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTagColor(index)}`}
-            >
-              {tag}
-            </button>
-          ))}
+            {dueDate && (
+              <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${getUrgencyColor(urgency)}`}>
+                {formatDate(dueDate)}
+              </span>
+            )}
+            {tags && tags.map((tag, index) => (
+              <button
+                key={tag}
+                onClick={() => onTagClick && onTagClick(tag)}
+                className={`inline-block px-2 py-0.5 rounded text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTagColor(index)}`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
+        <button
+          onClick={() => onRemove(id)}
+          className="text-red-400 hover:text-red-600 text-xs font-semibold transition-colors shrink-0"
+        >
+          Delete
+        </button>
       </div>
-      <button
-        onClick={() => onRemove(id)}
-        className="text-red-500 hover:text-red-700 font-semibold transition-colors"
-      >
-        Delete
-      </button>
+
+      {/* Move buttons — only rendered in kanban context */}
+      {(onMoveBack || onMoveNext) && (
+        <div className="flex gap-1 justify-between pt-1 border-t border-gray-100">
+          {onMoveBack ? (
+            <button
+              onClick={onMoveBack}
+              className="text-xs px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+            >
+              ← Back
+            </button>
+          ) : (
+            <span />
+          )}
+          {onMoveNext ? (
+            <button
+              onClick={onMoveNext}
+              className="text-xs px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+            >
+              Next →
+            </button>
+          ) : (
+            <span />
+          )}
+        </div>
+      )}
     </div>
   );
 }
